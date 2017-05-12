@@ -5,21 +5,22 @@ import random
 from statistics import variance
 
 dimensionsNum = 1
-searchRange = 1. # could be use to initialization only or to making walk range in iterations (dependent on knowledge about a position of best fitness or not)
+searchRange = 10 # could be use to initialization only or to making walk range in iterations (dependent on knowledge about a position of best fitness or not)
 thresholdVal = 2.5 # could be dependent on average fitness
 HordeSize = 100
-WalkingDeadSpeed = 0.01 # could be dependent on searchRange
+WalkingDeadSpeed = 0.05 # could be dependent on searchRange
 ApocalipseIteration = 100
 
 
 def main():
     global thresholdVal, HordeSize, WalkingDeadSpeed
     zombieHorde = initZombies(HordeSize)
-    print(executeZSO(zombieHorde, fun, thresholdVal, WalkingDeadSpeed, ApocalipseIteration))
+    bestFitness, bestZombie = executeZSO(zombieHorde, fun, thresholdVal, WalkingDeadSpeed, ApocalipseIteration)
+    print("Best fitness: ", bestFitness)
+    print("Location: ", bestZombie['location'])
 
 def fun(x):
     return sqrt(0.5*abs(x))*cos(x)+sqrt(abs(x))
-    # return x*sin(10.*3.14159*x)+1.
 
 def initZombies(n): # initialize n zombies
     global dimensionsNum, searchRange
@@ -40,14 +41,16 @@ def distance(locA, locB):
 def executeZSO(zombiesVec, fitnessFunc, thresholdVal, speed, generationsNum):
     # zombies hunt for humans
     global dimensionsNum
-    bestFitness = fitnessFunc(*(dimensionsNum*[0.0]))
+    bestFitness = fitnessFunc(*zombiesVec[0]['location'])
+    bestZombie = None
     for _ in range(generationsNum):
         dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
         for zombie in zombiesVec:
             for i in range(dimensionsNum):
                 zombie["location"][i] += zombie["direction"][i]*dirVariance[i]*speed
             fitnessVal = fitnessFunc(*zombie["location"])
-            bestFitness = fitnessVal if fitnessVal > bestFitness else bestFitness
+            bestFitness = fitnessVal if fitnessVal < bestFitness else bestFitness
+            bestZombie = zombie if fitnessVal == bestFitness else bestZombie
             # search exploitation mode (human)
             if fitnessVal < thresholdVal: 
                 zombie["is_human"] = True
@@ -65,7 +68,7 @@ def executeZSO(zombiesVec, fitnessFunc, thresholdVal, speed, generationsNum):
                         dirVecLen = 0.01*speed 
                     for i in range(dimensionsNum):
                         zombie["direction"][i] = (closestHuman["direction"][i]-zombie["direction"][i]) / dirVecLen * speed
-    return bestFitness
+    return bestFitness, bestZombie
 
 if __name__ == "__main__":
     main()
