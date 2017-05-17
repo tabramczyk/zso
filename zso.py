@@ -41,17 +41,30 @@ def zakharov(*xs):
     return sum(tuple(x**2 for x in xs)) + (0.5*sum(tuple(x for x in xs)))**2 + (0.5*sum(tuple(x for x in xs)))**4
 
 # shifted and rotated functions
-def shifted_and_rotated_bent_cigar(*xs):
+def shifted_and_rotated_bent_cigar(*xs): # No. 1, optimum = 100
     pass
 
-def shifted_and_rotated_rosenbrock(*xs):
+def shifted_and_rotated_rosenbrock(*xs): # No. 4, optimum = 400
     pass
 
-def shifted_and_rotated_rastrigin(*xs):
+def shifted_and_rotated_rastrigin(*xs): # No. 5, optimum = 500
     pass
 
-def shifted_and_rotated_zakharov(*xs):
+def shifted_and_rotated_zakharov(*xs): # No. 3, optimum = 300
     pass
+
+def shiftFunction(x_list, o_list): # return shifted x list, o_list - shifted global optimum list
+    new_x_list = []
+    for i in range(len(x_list)):
+        new_x_list.append(x_list[i]-o_list[i])
+    return new_x_list
+
+def rotateFunc(x_list, M): # return rotated x list, M - rotation matrix
+    new_x_list = [0 for _ in range(len(x_list))]
+    for i in range(len(x_list)):
+        for j in range(len(x_list)):
+            new_x_list[i] += x_list[j]*M[i*len(x_list)+j]
+    return new_x_list
 
 # zombie horde initialization
 def initZombies(n): # initialize n zombies
