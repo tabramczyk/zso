@@ -7,8 +7,8 @@ from statistics import variance
 dimensionsNum = 10
 searchRange = 100 # could be use to initialization only or to making walk range in iterations (dependent on knowledge about a position of best fitness or not)
 thresholdVal = None # could be dependent on average fitness
-HordeSize = 100
-WalkingDeadSpeed = 1.5 # could be dependent on searchRange 
+HordeSize = 50
+WalkingDeadSpeed = 0.008 # could be dependent on searchRange 
 ApocalipseIteration = 100000
 
 # main function
@@ -144,14 +144,17 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
         generationsNum += 1
         print(generationsNum, bestFitness, F_best, abs(bestFitness-F_best))
 
-        dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
+        # dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
 
         for zombie in zombiesVec:
             # print(zombie['location'])
+            # dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
+            dirVariance = variance(tuple((dirVal for dirVal in zombie["direction"])))
+            # print(dirVariance)
             for i in range(dimensionsNum):
-                zombie["location"][i] += zombie["direction"][i]*dirVariance[i]*speed
-                # if not (searchRange > zombie["location"][i] > -searchRange):
-                # zombie["location"][i] = -zombie["location"][i]
+                zombie["location"][i] += zombie["direction"][i]*dirVariance*speed
+                if not (searchRange >= zombie["location"][i] >= -searchRange):
+                    zombie["direction"][i] = -zombie["direction"][i]
 
             fitnessVal = fitnessFunc(zombie["location"], os, M)
             bestFitness = fitnessVal if fitnessVal < bestFitness else bestFitness
@@ -179,7 +182,7 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
                     if dirVecLen == 0:  # temporary divbyzero-repair
                         dirVecLen = 0.01*speed 
                     for i in range(dimensionsNum):
-                        zombie["direction"][i] = (closestHuman["direction"][i]-zombie["direction"][i]) / dirVecLen * speed
+                        zombie["direction"][i] = (closestHuman["location"][i]-zombie["location"][i]) / dirVecLen * speed
 
     return bestFitness, bestZombie
 
