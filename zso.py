@@ -2,13 +2,14 @@
 
 from math import *
 import random
+import copy
 from statistics import variance
 
 dimensionsNum = 10
 searchRange = 100 # could be use to initialization only or to making walk range in iterations (dependent on knowledge about a position of best fitness or not)
 thresholdVal = None # could be dependent on average fitness
 HordeSize = 50
-WalkingDeadSpeed = 0.008 # could be dependent on searchRange 
+WalkingDeadSpeed = 20 # could be dependent on searchRange 
 ApocalipseIteration = 100000
 
 # main function
@@ -40,20 +41,20 @@ def main():
     # print("Best fitness: ", bestFitness)
     # print("Location: ", bestZombie['location'])
 
-    # print("'shifted and rotated rosenbrock' function:")
-    # bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_rosenbrock, o4, M4, 400, thresholdVal, WalkingDeadSpeed)
-    # print("Best fitness: ", bestFitness)
-    # print("Location: ", bestZombie['location'])
+    print("'shifted and rotated rosenbrock' function:")
+    bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_rosenbrock, o4, M4, 400, thresholdVal, WalkingDeadSpeed)
+    print("Best fitness: ", bestFitness)
+    print("Location: ", bestZombie['location'])
 
     # print("'shifted and rotated rastrigin' function:")
     # bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_rastrigin, o5, M5, 500, thresholdVal, WalkingDeadSpeed)
     # print("Best fitness: ", bestFitness)
     # print("Location: ", bestZombie['location'])
 
-    print("'shifted and rotated zakharov' function:")
-    bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_zakharov, o3, M3, 300, thresholdVal, WalkingDeadSpeed)
-    print("Best fitness: ", bestFitness)
-    print("Location: ", bestZombie['location'])
+    #print("'shifted and rotated zakharov' function:")
+    #bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_zakharov, o3, M3, 300, thresholdVal, WalkingDeadSpeed)
+    #print("Best fitness: ", bestFitness)
+    #print("Location: ", bestZombie['location'])
 
 # temporary function
 def fun(x, os=None, M=None, F_best=None):
@@ -64,7 +65,7 @@ def bent_cigar(xs):
     return xs[0]**2 + (10**6)*sum(tuple((x**2 for x in xs[1:])))
 
 def rosenbrock(xs):
-    return sum(tuple(100*(x[i]**2-x[i+1])**2 + (x[i]-1)**2 for i in range(len(xs)-1)))
+    return sum(tuple(100*(xs[i]**2-xs[i+1])**2 + (xs[i]-1)**2 for i in range(len(xs)-1)))
 
 def rastrigin(xs):
     return sum(tuple(xs[i]**2 - 10*cos(2*pi*xs[i]) + 10 for i in range(len(xs)))) 
@@ -138,42 +139,46 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
     worstFitness = fitnessFunc(zombiesVec[0]['location'], os, M)
     bestZombie = None
     generationsNum = 0
-
+    humans = []
+    actualBest = 0
     while generationsNum < ApocalipseIteration and abs(bestFitness-F_best) >= 1e-8:
-
         generationsNum += 1
-        print(generationsNum, bestFitness, F_best, abs(bestFitness-F_best))
-
-        # dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
-
+        print(generationsNum, bestFitness, speed, len(humans), actualBest, worstFitness)
+        #humanSpeed = speed / (2+0.001*generationsNum)
+        worstFitness = fitnessFunc(max(zombiesVec, key=lambda z: fitnessFunc(z['location'], os, M))['location'], os, M)
+        actualBest = fitnessFunc(min(zombiesVec, key=lambda z: fitnessFunc(z['location'], os, M))['location'], os, M)
         for zombie in zombiesVec:
-            # print(zombie['location'])
-            # dirVariance = [variance(z["direction"][dim] for z in zombiesVec) for dim in range(dimensionsNum)]
             dirVariance = variance(tuple((dirVal for dirVal in zombie["direction"])))
             # print(dirVariance)
             for i in range(dimensionsNum):
-                zombie["location"][i] += zombie["direction"][i]*dirVariance*speed
+                if zombie["is_human"]:
+                    tmp = copy.deepcopy(zombie['location'])
+                    tmp[i] += zombie["direction"][i]*dirVariance*speed*random.uniform(0.0001, 0.1)
+                    if fitnessFunc(zombie['location'], os, M) > fitnessFunc(tmp, os, M):
+                        zombie["location"] = copy.deepcopy(tmp) 
+                else:
+                    zombie["location"][i] += zombie["direction"][i]*dirVariance*speed
                 if not (searchRange >= zombie["location"][i] >= -searchRange):
                     zombie["direction"][i] = -zombie["direction"][i]
 
             fitnessVal = fitnessFunc(zombie["location"], os, M)
-            bestFitness = fitnessVal if fitnessVal < bestFitness else bestFitness
-            bestZombie = zombie if fitnessVal == bestFitness else bestZombie
-
+            if fitnessVal <= bestFitness:
+                bestFitness = fitnessVal
+                bestZombie = zombie
+            #bestFitness = fitnessVal if fitnessVal < bestFitness else bestFitness
+            #bestZombie = zombie if fitnessVal == bestFitness else bestZombie
             # search exploitation mode (human)
-            #alpha = 0.5
-            # thresholdVal = (1+alpha) * (sum(tuple((fitnessFunc(z["location"], os, M)) for z in zombiesVec)) / len(zombiesVec))
-            thresholdVal = (bestFitness + worstFitness) / 2
+            thresholdVal = (bestFitness + worstFitness)/2.
             if fitnessVal < thresholdVal: 
-                #print("xd 1")
                 zombie["is_human"] = True
                 # gradient ascent search of local neighborhood
-                if len(tuple(filter(lambda z: (not z["is_human"]) and (distance(z["location"], zombie["location"]) < speed), zombiesVec))):
+                if bestZombie != zombie and len(tuple(filter(lambda z: (not z["is_human"]) and (distance(z["location"], zombie["location"]) < speed), zombiesVec))):
                     # bitten by zombie
                     zombie["is_human"] = False
-                    #print("xd 1.1")
+                else:
+                    zombie['is_human'] = True
             else:
-                #print("xd 2")
+                zombie["is_human"] = False
                 humans = tuple(z for z in zombiesVec if z["is_human"])
                 if len(humans):
                     # find closest human h
@@ -182,7 +187,7 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
                     if dirVecLen == 0:  # temporary divbyzero-repair
                         dirVecLen = 0.01*speed 
                     for i in range(dimensionsNum):
-                        zombie["direction"][i] = (closestHuman["location"][i]-zombie["location"][i]) / dirVecLen * speed
+                        zombie["location"][i] = (closestHuman["location"][i]-zombie["location"][i]) / dirVecLen * speed
 
     return bestFitness, bestZombie
 
