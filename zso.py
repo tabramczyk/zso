@@ -30,19 +30,19 @@ def main():
     # print(o5)
     # print(M5)
 
-    # print("'fun' function:")
-    # bestFitness, bestZombie = executeZSO(zombieHorde, fun, thresholdVal, WalkingDeadSpeed, ApocalipseIteration)
-    # print("Best fitness: ", bestFitness)
-    # print("Location: ", bestZombie['location'])
-
-    print("'shifted and rotated bent cigar' function:")
-    bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_bent_cigar, o1, M1, thresholdVal, WalkingDeadSpeed, ApocalipseIteration)
+    print("'fun' function:")
+    bestFitness, bestZombie = executeZSO(zombieHorde, fun, None, None, thresholdVal, WalkingDeadSpeed, ApocalipseIteration)
     print("Best fitness: ", bestFitness)
     print("Location: ", bestZombie['location'])
 
+    # print("'shifted and rotated bent cigar' function:")
+    # bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_bent_cigar, o1, M1, thresholdVal, WalkingDeadSpeed, ApocalipseIteration)
+    # print("Best fitness: ", bestFitness)
+    # print("Location: ", bestZombie['location'])
+
 # temporary function
-def fun(x):
-    return sqrt(0.5*abs(x))*cos(x)+sqrt(abs(x))
+def fun(x, os=None, M=None, F_best=None):
+    return sqrt(0.5*abs(x[0]))*cos(x[0])+sqrt(abs(x[0]))
 
 # basic functions
 def bent_cigar(xs):
@@ -80,7 +80,6 @@ def rotateFunc(x_list, M): # return rotated x list, M - rotation matrix
     new_x_list = [0 for _ in range(len(x_list))]
     for i in range(len(x_list)):
         for j in range(len(x_list)):
-            print(x_list[j])
             new_x_list[i] += x_list[j]*M[i*len(x_list)+j]
     return new_x_list
 
