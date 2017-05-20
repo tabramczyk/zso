@@ -8,15 +8,15 @@ from statistics import variance
 dimensionsNum = 10
 searchRange = 100 # could be use to initialization only or to making walk range in iterations (dependent on knowledge about a position of best fitness or not)
 thresholdVal = None # could be dependent on average fitness
-HordeSize = 15
+HordeSize = 5
 WalkingDeadSpeed = 1 # could be dependent on searchRange 
-ApocalipseIteration = 1000000
+ApocalipseIteration = 100000
+fileName = "out/zakharov_speed="+str(WalkingDeadSpeed)+"_zombies="+str(HordeSize)
 
 # main function
 def main():
 
     global thresholdVal, HordeSize, WalkingDeadSpeed
-    zombieHorde = initZombies(HordeSize)
 
     o1, M1 = loadShiftAndRotationData("shuffle_data_1_D10.txt", "M_1_D10.txt")
     # print(o1)
@@ -51,10 +51,12 @@ def main():
     # print("Best fitness: ", bestFitness)
     # print("Location: ", bestZombie['location'])
 
-    print("'shifted and rotated zakharov' function:")
-    bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_zakharov, o3, M3, 300, thresholdVal, WalkingDeadSpeed)
-    print("Best fitness: ", bestFitness)
-    print("Location: ", bestZombie['location'])
+    for callNum in range(30):
+        zombieHorde = initZombies(HordeSize)
+        print("'shifted and rotated zakharov' function:")
+        bestFitness, bestZombie = executeZSO(zombieHorde, shifted_and_rotated_zakharov, o3, M3, 300, thresholdVal, WalkingDeadSpeed, callNum+1)
+        print("Best fitness: ", bestFitness)
+        print("Location: ", bestZombie['location'])
 
 # temporary function
 def fun(x, os=None, M=None, F_best=None):
@@ -131,20 +133,24 @@ def distance(locA, locB):
     return sqrt(sum(tuple((locB[i]-locA[i])**2 for i in range(len(locA)))))
 
 # algorithm's execution
-def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
+def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed, callNum):
 
     # zombies hunt for humans
-    global dimensionsNum, ApocalipseIteration
+    global dimensionsNum, ApocalipseIteration, fileName
     bestFitness = fitnessFunc(zombiesVec[0]['location'], os, M)
     worstFitness = fitnessFunc(zombiesVec[0]['location'], os, M)
     bestZombie = None
     generationsNum = 0
     humans = []
     actualBest = 0
+    file = open(fileName+"_call="+str(callNum)+".dat", "w")
+
     while generationsNum < ApocalipseIteration and abs(bestFitness-F_best) >= 1e-8:
         generationsNum += 1
         print(generationsNum, bestFitness, speed, len(humans), actualBest, worstFitness)
-        #humanSpeed = speed / (2+0.001*generationsNum)
+        if generationsNum > 2:
+            file.write(str(generationsNum) + " " + str(bestFitness) + " " + str(speed) + " " + str(len(tuple((z for z in zombiesVec if z["is_human"])))) + " " + str(actualBest) + " " + str(worstFitness) + "\n")
+        humanSpeed = speed / (2+0.001*generationsNum)
         worstFitness = fitnessFunc(max(zombiesVec, key=lambda z: fitnessFunc(z['location'], os, M))['location'], os, M)
         actualBest = fitnessFunc(min(zombiesVec, key=lambda z: fitnessFunc(z['location'], os, M))['location'], os, M)
         for zombie in zombiesVec:
@@ -189,6 +195,7 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed):
                     for i in range(dimensionsNum):
                         zombie["location"][i] = (closestHuman["location"][i]-zombie["location"][i]) / dirVecLen * speed
 
+    file.close()
     return bestFitness, bestZombie
 
 	
