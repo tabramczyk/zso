@@ -159,7 +159,7 @@ def executeZSO(zombiesVec, fitnessFunc, os, M, F_best, thresholdVal, speed, call
             for i in range(dimensionsNum):
                 if zombie["is_human"]:
                     tmp = copy.deepcopy(zombie['location'])
-                    tmp[i] += zombie["direction"][i]*dirVariance*speed*random.uniform(-speed, speed)
+                    tmp[i] += zombie["direction"][i]*dirVariance*random.uniform(-speed, speed)
                     if fitnessFunc(zombie['location'], os, M) > fitnessFunc(tmp, os, M):
                         zombie["location"] = copy.deepcopy(tmp) 
                 else:
